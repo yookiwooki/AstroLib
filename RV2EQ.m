@@ -36,6 +36,10 @@ F = atan2(SIN_F, COS_F);
 
 lambda = F + h*cos(F) - k*sin(F);
 
+if abs(lambda) > 2*pi
+    lambda = lambda - 2*pi*sign(lambda);
+end
+
 %Collect components into equionoctial element set
 EQ = [a; p; q; h; k; lambda];
 end
