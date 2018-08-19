@@ -9,7 +9,7 @@ import pdb
 import unittest
 import numpy as np
 from numpy import linalg as LA
-from cart_to_kep import rv2coe
+from orbits.cart_to_kep import rv2coe
 
 
 class TestCartToKep(unittest.TestCase):
