@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-test_cart_to_kep.py - unit tests for kepler.py
+test_cart_to_kep.py - unit tests for cart_to_kep.py
 """
 
 
@@ -15,7 +15,7 @@ from orbits.cart_to_kep import rv2coe
 class TestCartToKep(unittest.TestCase):
     def setUp(self):
         self.longMessage = True
-        self.mu1 = 1.0 # Canonical (LU^3/sec^2)
+        self.mu1 = 1.0 # Canonical (LU^3/TU^2)
         self.mu2 = 398600.4415 # Earth (km^3/sec^2)
         self.tol = 1e-3 # Error tolerance
 
