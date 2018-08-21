@@ -32,7 +32,8 @@ def rv2coe(rv, mu):
     Note:
     The fast variable is chosen dependent on special case orbits
      - non-inclined, non-equatorial, elliptical (default) : true anom
-     - elliptical equatorial : longitude of periapsis
+     - elliptical equatorial : (true lon. - lon. of p.) mod 2*pi
+                             : also arg. of periapsis -> lon. of p.
      - circular inclined : argument of latitude
      - circular equatorial : true longitude
 
@@ -98,7 +99,7 @@ def rv2coe(rv, mu):
         tlon = _local_arccos(r_vec[0]/r_mag)
         if (r_vec[1] < 0.0):
             tlon = 2*np.pi - tlon
-        return np.array([sma, e_mag, inc, lonper, raan, tlon-lonper])
+        return np.array([sma, e_mag, inc, lonper, raan, (tlon-lonper)%np.pi])
 
     # Circular inclined case - argument of latitude
     elif (np.abs(e_mag) < _local_eps and np.abs(inc) > _local_eps):

@@ -33,7 +33,7 @@ class TestKepToCart(unittest.TestCase):
     def test_ellip_eq(self):
         rv_ref = np.array([1, 0.25, 0, 0.1, 0.5, 0])
         coe  = np.array([0.59513713, 0.78796300, 0.0, \
-                            3.51853886075583, 0.0,-3.2735602 ])
+                            3.51853886075583, 0.0, 3.00962511 ])
         rv_test = coe2rv(coe, self.mu1)
         error = LA.norm(rv_ref - rv_test)
         self.assertTrue(error < self.tol,
