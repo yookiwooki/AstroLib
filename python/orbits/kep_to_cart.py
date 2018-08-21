@@ -16,7 +16,7 @@ def coe2rv(coe, mu):
     Vallado 4th Ed. pg 118
 
     Args:
-    coe (numpy.array): 6x1 numpy array with Keplerian orbital elements
+    coe (numpy.array): 6x1 array with Keplerian orbital elements
                            1: semimajor axis (LU)
                            2: eccentricity
                            3: inclination (radians)
@@ -26,7 +26,7 @@ def coe2rv(coe, mu):
     mu (float):        gravitational constant (LU^3/TU^2)
 
     Returns:
-    numpy.array:       6x1 numpy array with Cartesian position/velocity
+    numpy.array:       6x1 array with Cartesian position/velocity
     """
     # Check if circular equatorial
     if ((np.abs(coe[1]) < _local_eps) and (np.abs(coe[2]) < _local_eps)):
