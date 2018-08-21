@@ -50,18 +50,13 @@ def coe2rv(coe, mu):
                        np.sqrt(mu/p)*(e + np.cos(nu)), 0])
 
     # Calculate total rotation matrix
-    if (np.abs(coe[2]) < _local_eps):
-        # Skip calculation if equatorial orbit
-        return np.concatenate([r_pqw, v_pqw])
+    r_a = rot3(-coe[3])
+    r_b = rot1(-coe[2])
+    r_c = rot3(-coe[4])
+    r_total = np.matmul(r_c, np.matmul(r_b, r_a))
 
-    else:
-        r_a = rot3(-coe[3])
-        r_b = rot1(-coe[2])
-        r_c = rot3(-coe[4])
-        r_total = np.matmul(r_c, np.matmul(r_b, r_a))
+    r = np.matmul(r_total, r_pqw)
+    v = np.matmul(r_total, v_pqw)
 
-        r = np.matmul(r_total, r_pqw)
-        v = np.matmul(r_total, v_pqw)
-
-        return np.concatenate([r, v])
+    return np.concatenate([r, v])
 

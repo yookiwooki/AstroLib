@@ -88,13 +88,17 @@ def rv2coe(rv, mu):
 
     # Fast variable - this will be different depending on orbit
 
-    # Elliptical equatorial case - longitude of periapsis
+    # Elliptical equatorial case - lon. of periapsis and true lon.
     if (np.abs(inc) < _local_eps and np.abs(e_mag) > _local_eps):
-        lonp = _local_arccos(e_vec[0]/e_mag)
+        lonper = _local_arccos(e_vec[0]/e_mag)
         # If J component of e vector is negative, pi<lonp<2*pi
         if (e_vec[1] < 0.0):
-            lonp = 2*np.pi - lonp
-        return np.array([sma, e_mag, inc, argp, raan, lonp])
+            lonper = 2*np.pi - lonper
+        # If J component of e vector is negative pi<tlon<2*pi
+        tlon = _local_arccos(r_vec[0]/r_mag)
+        if (r_vec[1] < 0.0):
+            tlon = 2*np.pi - tlon
+        return np.array([sma, e_mag, inc, lonper, raan, tlon-lonper])
 
     # Circular inclined case - argument of latitude
     elif (np.abs(e_mag) < _local_eps and np.abs(inc) > _local_eps):
