@@ -19,7 +19,7 @@ def rv2coe(rv, mu):
 
     Args:
     rv (numpy.array): 6x1 array with pos/vel (LU, LU/TU)
-    mu (float):       gravitational constant (LU^3/TU^2)
+    mu (float):       gravitational parameter (LU^3/TU^2)
 
     Returns:
     numpy.array:      6x1 array with Keplerian orbital elements
