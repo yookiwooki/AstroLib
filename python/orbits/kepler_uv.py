@@ -9,7 +9,7 @@ from orbits.stumpff import stumpff_c, stumpff_s
 
 
 """
-kepler_uv.py - solve kepler's problem using universal variables
+kepler_uv.py - solve Kepler's problem using universal variables
 """
 
 
@@ -66,18 +66,22 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
         if (alpha > 1.0e-6): # Elliptical
             x = np.sqrt(mu)*tof*alpha
         elif (abs(alpha) < 1.0e-6): # Parabolic
-            p = (astro_2norm(LA.cross(rv0[0:3] ,rv0[3:6])))**2/mu
-            s = np.arccot(3*np.sqrt(mu/(p**3))*tof)/2
+            p = (astro_2norm(np.cross(rv0[0:3] ,rv0[3:6])))**2/mu
+            s = 1/(np.arctan(3*np.sqrt(mu/(p**3))*tof))/2
             w = np.arctan(np.tan(s)**(1.0/3.0))
-            x = np.sqrt(p)*2*np.cot(2*w)
+            x = np.sqrt(p)*2*1/(np.tan(2*w))
         else: # Hyperbolic
             x = np.sign(tof)*np.sqrt(-a)*np.log(-2*mu*alpha*tof/ \
-                    (LA.dot(rv0[0:3], rv0[3:6]) + np.sign(tof)* \
+                    (np.dot(rv0[0:3], rv0[3:6]) + np.sign(tof)* \
                     np.sqrt(-mu*a)*(1 - r0_mag*alpha)))
+
     deltax = 1
     i = 0
+
     x_store = []
     z_store = []
+    deltat_store = []
+
     while ((np.abs(deltax) > rs_tol) and (i < imax)):
         z = x**2*alpha
         x_store.append(x)
@@ -91,6 +95,8 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
 
         t = (1/np.sqrt(mu))*((x**3)*s + (np.dot(rv0[0:3], rv0[3:6])/ \
                 np.sqrt(mu))*x**2*c + r0_mag*x*(1 - z*s))
+
+        deltat_store.append(tof - t)
 
         deltax = np.sqrt(mu)*(tof-t)/r_mag
         x = x + deltax
@@ -118,6 +124,7 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
     rv[0:3] = f*rv0[0:3] + g*rv0[3:6]
     rv[3:6] = f_dot*rv0[0:3] + g_dot*rv0[3:6]
 
+    # Store detailed final data
     out_detail = {}
     out_detail['c'] = c
     out_detail['s'] = s
@@ -128,9 +135,11 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
     out_detail['x'] = x
     out_detail['z'] = z
 
+    # Store detailed diagnostic data
     diagnostic = {}
     diagnostic['i'] = i
     diagnostic['x_store'] = np.asarray(x_store)
     diagnostic['z_store'] = np.asarray(z_store)
+    diagnostic['deltat_store'] = np.asarray(deltat_store)
 
     return OutputKepUV(rv, out_detail, diagnostic)
