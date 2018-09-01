@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 
+import pdb
 import warnings
 import numpy as np
 from astromath.overloads import astro_2norm
+from orbits.stumpff import stumpff_c, stumpff_s
 
 
 """
@@ -58,12 +60,12 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
 
     # Step 2: Solve UV TOF equation with newton step root solve
     # Initial guess - see Vallado KEPLER algorithm
-    if (np.abs(tof) < 1.0e-6): # Guess zero if TOF near zero
+    if (abs(tof) < 1.0e-6): # Guess zero if TOF near zero
         x = 0
     else:
         if (alpha > 1.0e-6): # Elliptical
             x = np.sqrt(mu)*tof*alpha
-        elif (np.abs(alpha) < 1.0e-6): # Parabolic
+        elif (abs(alpha) < 1.0e-6): # Parabolic
             p = (astro_2norm(LA.cross(rv0[0:3] ,rv0[3:6])))**2/mu
             s = np.arccot(3*np.sqrt(mu/(p**3))*tof)/2
             w = np.arctan(np.tan(s)**(1.0/3.0))
@@ -81,14 +83,14 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
         x_store.append(x)
         z_store.append(z)
 
-        c = stumpff_C(z)
-        s = stumpff_S(z)
+        c = stumpff_c(z)
+        s = stumpff_s(z)
 
-        r_mag = x**2*c + (np.dot(rv0[0:3], rv0[3:6])/np.sqrt(mu))*x* \
+        r_mag = (x**2)*c + (np.dot(rv0[0:3], rv0[3:6])/np.sqrt(mu))*x* \
                 (1 - z*s) + r0_mag*(1 - z*c)
 
-        t = (1/np.sqrt(mu))*((x**3)*s + (np.dot(rv0[0:3], rv0[3:6]))/ \
-                np.sqrt(mu))*x**2*c + r0_mag*x*(1 - z*s)
+        t = (1/np.sqrt(mu))*((x**3)*s + (np.dot(rv0[0:3], rv0[3:6])/ \
+                np.sqrt(mu))*x**2*c + r0_mag*x*(1 - z*s))
 
         deltax = np.sqrt(mu)*(tof-t)/r_mag
         x = x + deltax
@@ -112,7 +114,7 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
         warnings.warn("f/g accuracy condition not met.")
 
     # Step 4: compute final position and velocity
-    rv = np.zeros(6,1)
+    rv = np.zeros(6)
     rv[0:3] = f*rv0[0:3] + g*rv0[3:6]
     rv[3:6] = f_dot*rv0[0:3] + g_dot*rv0[3:6]
 
@@ -129,6 +131,6 @@ def kep_uv(rv0, tof, mu, rs_tol=1e-12, check_tol=1e-5, imax=100):
     diagnostic = {}
     diagnostic['i'] = i
     diagnostic['x_store'] = np.asarray(x_store)
-    doagnostic['z_store'] = np.asarray(z_store)
+    diagnostic['z_store'] = np.asarray(z_store)
 
     return OutputKepUV(rv, out_detail, diagnostic)
