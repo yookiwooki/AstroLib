@@ -29,6 +29,7 @@ def refgen(rv0, filename):
     with open(filename, 'rb') as input:
         data_stored = pickle.load(input)
 
+    # Print the data to ensure that it makes sense
     print(data_stored.rv)
     print(data_stored.out_detail)
     print(data_stored.diagnostic)
