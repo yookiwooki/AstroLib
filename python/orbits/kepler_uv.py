@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 
+"""
+kepler_uv.py - solve Kepler's problem using universal variables
+"""
+
+
 import pdb
 import warnings
 import numpy as np
 from astromath.overloads import astro_2norm
 from orbits.stumpff import stumpff_c, stumpff_s
-
-
-"""
-kepler_uv.py - solve Kepler's problem using universal variables
-"""
 
 
 class OutputKepUV(object):
