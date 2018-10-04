@@ -11,22 +11,35 @@ import pudb
 class OptionsRKF(object):
     """ Options for RKF integrator
 
-    tol (float): error tolerance
-    h0 (float):  initial step size
+    tol (float):      error tolerance
+    h0 (float):       initial step size
+    r_param (float):  factor to reduce step size when tol. is not met
+    i_param (float):  factor to increase step size when tol is met
+    db_param (float): deadband factor for increasing step size
+
     """
-    def __init__(self,tol,h0):
+    def __init__(self, tol, h0=0.001, r_param=0.5, i_param=1.5, \
+            db_param=0.9):
+
         self.tol = tol
         self.h0 = h0
+        self.r_param = r_param
+        self.i_param = i_param
+        self.db_param = db_param
+
 
 class ResultRKF(object):
     """ Output data from RKF integrator
-    t: (numpy.array): m x 1 floats with times corresponding to rows of y
-    x: (numpy.array): m x n floats with integrated result
-
+    t (numpy.array):     m x 1 floats with times corresponding to rows of y
+    x (numpy.array):     m x n floats with integrated result
+    error (numpy.array): m x 1 floats with errors, first error is zero
+    h (numpy.array):     m x 1 floats with step sizes
     """
     def __init__(self,t,x):
         self.t = t
         self.x = x
+        self.error = 0
+        self.h = 0
 
 def rkf45(func, tspan, x0, options):
     """ RKF 4(5)th order variable step size numerical integration
@@ -35,7 +48,14 @@ def rkf45(func, tspan, x0, options):
     Fehlberg, E. "Low order classical runge-kutta formulas with stepsize
     control and their application to some heat transfer problems." (1969).
 
+    NOTE: The reference above has a horrifically tricky typo related to the
+    step size in Equation 2 that has been corrected in this implementation.
+
     Args:
+    func:                 derivative function
+    tspan (numpy.array):  2 x 1 floats with initial and final times
+    x0 (numpy.array):     n x 1 floats with initial state
+    options (OptionsRKF): see class definition above
 
     Returns:
     ResultRKF: Output data from RKF integrator
@@ -62,6 +82,7 @@ def rkf45(func, tspan, x0, options):
     h = options.h0
 
     result = ResultRKF(np.array([tspan[0]]), x0)
+    result.h = h
 
     while (t < tspan[1]):
 
@@ -94,8 +115,19 @@ def rkf45(func, tspan, x0, options):
         # Save current step
         result.t = np.vstack([result.t, t])
         result.x = np.vstack([result.x, x])
+        result.error = np.vstack([result.error, error])
+        result.h = np.vstack([result.h, h])
 
-        # Step forward
+        # Step forward (Stepsize control)
+        options.r_param = 0.5
+        options.i_param = 1.5
+        options.db_param = 0.9
+
+        if (abs(error) > options.tol) and (h > options.h0):
+            h = max(h*options.r_param, options.h0)
+        elif (abs(error) < options.tol*options.db_param):
+            h = h*options.i_param
+
         t = t + h
 
     result.x = result.x.transpose()
