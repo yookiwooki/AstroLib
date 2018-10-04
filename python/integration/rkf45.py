@@ -42,18 +42,18 @@ def rkf45(func, tspan, x0, options):
     """
 
     # Set coefficients
-    alpha = np.array([2/9, 1/3, 3/4, 1, 5/6])
+    alpha = np.array([1/4, 3/8, 12/13, 1, 1/2])
 
     beta = np.zeros([5,5])
-    beta[0,0] =   np.array([2/9])
-    beta[1,0:2] = np.array([1/12, 1/4])
-    beta[2,0:3] = np.array([69/128, -243/128, 135/64])
-    beta[3,0:4] = np.array([-17/12, 27/4, -27/5, 16/15])
-    beta[4,0:5] = np.array([65/432, -5/16, 13/16, 4/27, 5/144])
+    beta[0,0] =   np.array([1/4])
+    beta[1,0:2] = np.array([3/32, 9/32])
+    beta[2,0:3] = np.array([1932/2197, -7200/2197, 7296/2197])
+    beta[3,0:4] = np.array([439/216, -8, 3680/513, -845/4104])
+    beta[4,0:5] = np.array([-8/27, 2, -3544/2565, 1859/4104, -11/40])
 
-    c = np.array([1/9, 0, 9/20, 16/45, 1/12])
+    c = np.array([25/216, 0, 1408/2565, 2197/4104, -1/5])
 
-    c_hat = np.array([47/450, 0, 12/25, 32/225, 1/30, 6/25])
+    c_hat = np.array([16/135, 0, 6656/12825, 28561/56430, -9/50, 2/55])
 
     # Initialization
     f = np.zeros([6,x0.size])
@@ -65,25 +65,28 @@ def rkf45(func, tspan, x0, options):
 
     while (t < tspan[1]):
 
-        pudb.set_trace()
-
         # Evaluate derivatives
-        f[0,:] = func(t, x)
-        f[1,:] = func(t + alpha[0]*h, beta[0,0]*f[0,:])
-        f[2,:] = func(t + alpha[1]*h, beta[1,0]*f[0,:] + beta[1,1]*f[1,:])
-        f[3,:] = func(t + alpha[2]*h, beta[2,0]*f[0,:] + beta[2,1]*f[1,:] \
+        f[0,:] = h*func(t, x)
+        f[1,:] = h*func(t + alpha[0]*h, x + beta[0,0]*f[0,:])
+        f[2,:] = h*func(t + alpha[1]*h, x + beta[1,0]*f[0,:] + beta[1,1]*f[1,:])
+        f[3,:] = h*func(t + alpha[2]*h, x + beta[2,0]*f[0,:] + beta[2,1]*f[1,:] \
                 + beta[2,2]*f[2,:])
-        f[4,:] = func(t + alpha[3]*h, beta[3,0]*f[0,:] + beta[3,1]*f[1,:] \
+        f[4,:] = h*func(t + alpha[3]*h, x + beta[3,0]*f[0,:] + beta[3,1]*f[1,:] \
                 + beta[3,2]*f[2,:] + beta[3,3]*f[3,:])
-        f[5,:] = func(t + alpha[4]*h, beta[4,0]*f[0,:] + beta[4,1]*f[1,:] \
+        f[5,:] = h*func(t + alpha[4]*h, x + beta[4,0]*f[0,:] + beta[4,1]*f[1,:] \
                 + beta[4,2]*f[2,:] + beta[4,3]*f[3,:] + beta[4,4]*f[4,:])
 
         # Evaluate integrated states
-        x_hat = x
+        x_hat_add = 0
+        x_add = 0
+
         for k in range(0,6):
-            x_hat = x_hat + h*c_hat[k]*f[k]
+            x_hat_add = x_hat_add + c_hat[k]*f[k,:]
         for k in range(0,5):
-            x = x + h*c[k]*f[k]
+            x_add = x_add + c[k]*f[k,:]
+
+        x_hat = x + x_hat_add
+        x = x + x_add
 
         # Check accuracy
         error = LA.norm(abs(x-x_hat))
