@@ -1,2 +1,2 @@
 # AstroLib
-Useful Celestial Mechanics functions for MATLAB and Python
+Useful Celestial Mechanics functions for Python and MATLAB
