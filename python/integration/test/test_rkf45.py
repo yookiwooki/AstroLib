@@ -20,8 +20,6 @@ class TestRKF45(unittest.TestCase):
 
     def test_noninc_noneq_ellip(self):
 
-        pudb.set_trace()
-
         rv0 = np.array([1, 0, 0, 0.1, 1, 0.1])
         tspan = [0, 6*np.pi]
         result = rkf45(deriv_kepler, tspan, rv0, self.options)
@@ -30,10 +28,10 @@ class TestRKF45(unittest.TestCase):
         y = result.x[1,:]
         z = result.x[2,:]
 
-        fig1 = plt.figure()
-        ax = fig1.add_subplot(111, projection='3d')
-        traj = ax.plot(x, y, z)
-        plt.show()
+        #fig1 = plt.figure()
+        #ax = fig1.add_subplot(111, projection='3d')
+        #traj = ax.plot(x, y, z)
+        #plt.show()
 
-        plt.plot(result.h)
-        plt.show()
+        #plt.plot(result.h)
+        #plt.show()
