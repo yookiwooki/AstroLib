@@ -26,7 +26,6 @@ class SphereHarm(object):
             found = True
 
         except FileNotFoundError:
-            print(fname)
             self.download_coeff(fname)
             try:
                 fh = open('data/' + fname, 'r')

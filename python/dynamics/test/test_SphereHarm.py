@@ -18,5 +18,4 @@ class TestSphereHarm(unittest.TestCase):
     def test_SphereHarm(self):
         sph_harm = SphereHarm(self.field)
 
-        pudb.set_trace()
         print(sph_harm.sh)
