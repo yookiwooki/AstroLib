@@ -30,15 +30,13 @@ class AstroTime(object):
         gps_time = np.zeros([2,1])
 
         # UTC time in sec since Midnight Jan 5, 1980
-        t = (utc_time - 2444244.5000000)*86400 + 15 + self.leapsec
+        t = (utc_time - 2444244.5)*86400.0 + self.leapsec
 
-        week = 604800
-        gps_time[0] = int(t/week)
-        gps_time[1] = t % week
-
+        gps_time[0] = int(t/604800)
+        gps_time[1] = t % 604800
         return gps_time
 
-    def gps2utc(gps_time):
+    def gps2utc(self, gps_time):
         """ Convert from GPS time to UTC time
 
         Ref: Misra and Enge, GPS Signals Measurements and Performance.
@@ -50,6 +48,10 @@ class AstroTime(object):
         Returns:
         float: UTC time in Julian Date format
         """
+        t = gps_time[0]*604800.0 + gps_time[1]
+
+        utc_time = (t - self.leapsec)/86400.0 + 2444244.5
+        return utc_time
 
     def get_leapsec(self, utc_time):
         """ Return the integer number of leap seconds at given time
@@ -87,7 +89,7 @@ class AstroTime(object):
             else:
                 fh.close()
                 print('AstTime.get_leapsec(): leap second data more than six' +
-                'months old')
+                ' months old')
 
         except FileNotFoundError:
             print('AstTime.get_leapsec(): leap second data not found')
