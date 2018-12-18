@@ -1,3 +1,4 @@
+! rk45module.f90 - Runge-Kutta-Fehlberg ordinary differential equation solver
 module rk45module
 
     use kindmodule
@@ -5,21 +6,24 @@ module rk45module
     implicit none
 
     ! Input/Output for integrator 
-    type IntegratorInOut
-        integer :: n ! State size
-        complex(wp) :: t0 ! Initial time
-        complex(wp) :: tf ! Final time
-        complex(wp) :: h0=1.0D-4 ! Initial step size
-        integer :: stepmax = 10000  ! Maximum number of steps
-        complex(wp) :: hmin = 1.0D-6 ! Minimum step size
-        real(wp) :: tol = 1.0D-10 ! Tolerance
-        complex(wp), dimension(:), allocatable :: x0 ! Initial state 
-        complex(wp), dimension(:), allocatable :: tout ! Time output 
-        complex(wp), dimension(:), allocatable :: eout ! Error output 
-        complex(wp), dimension(:), allocatable :: hout ! Step size output 
-        complex(wp), dimension(:,:), allocatable :: xout ! State output 
-    end type IntegratorInOut
+    type IntegratorIn
+        integer :: n                                     ! State size
+        complex(wp) :: t0                                ! Initial time
+        complex(wp) :: tf                                ! Final time
+        complex(wp) :: h0=1.0D-4                         ! Initial step size
+        integer :: stepmax = 10000                       ! Max number of steps
+        complex(wp) :: hmin = 1.0D-6                     ! Min step size
+        real(wp) :: tol = 1.0D-10                        ! Tolerance
+        complex(wp), dimension(:), allocatable :: x0     ! Initial state 
+    end type IntegratorIn
 
+    type IntegratorOut
+        complex(wp), dimension(:), allocatable :: tout   ! Time output 
+        complex(wp), dimension(:), allocatable :: eout   ! Error output 
+        complex(wp), dimension(:), allocatable :: hout   ! Step size output 
+        complex(wp), dimension(:,:), allocatable :: xout ! State output 
+    end type IntegratorOut
+    
     ! Runge-Kutta-Fehlberg coefficients
     complex(wp), parameter :: alpha(5) = &
         [1.0/4.0, 3.0/8.0, 12.0/13.0, 1.0, 1.0/2.0]
@@ -41,7 +45,8 @@ module rk45module
 
 contains 
 
-    subroutine rk45(f_ptr, io)
+    ! Main integrator procedure
+    subroutine rk45(f_ptr, intin, intout)
 
         use kindmodule
         use derivkepmodule
@@ -50,124 +55,136 @@ contains
         implicit none
 
         ! In/Out
-        type(IntegratorInOut), intent(inout) :: io 
-        
+        type(IntegratorIn),intent(in) :: intin 
+        type(IntegratorOut),intent(out) :: intout
+
         abstract interface
         function func(t, x)
         use kindmodule
         complex(wp),intent(in) :: t
-        complex(wp),dimension(6),intent(in) :: x
-        complex(wp),dimension(6) :: func 
+        complex(wp),intent(in),allocatable :: x(:)
+        complex(wp),allocatable :: func(:)
         end function func
         end interface 
+
+    procedure (func), pointer :: f_ptr => null ()  ! Derivative function 
+
+    ! Local
+    complex(wp) :: t ! Time
+    complex(wp),dimension(:,:),allocatable :: f ! Derivatives
+    complex(wp) :: h ! Step size
+    complex(wp),dimension(:),allocatable :: x0
+    complex(wp),dimension(:),allocatable :: xhatadd
+    complex(wp),dimension(:),allocatable :: xadd
+    complex(wp),dimension(:),allocatable :: xhat
+    complex(wp),dimension(:),allocatable :: x
+    complex(wp),dimension(:,:),allocatable :: xstore
+    complex(wp),dimension(:),allocatable :: tstore
+    complex(wp),dimension(:),allocatable :: estore
+    complex(wp),dimension(:),allocatable :: hstore
+    integer :: step
+    complex(wp) :: error
+    integer :: i
+    complex(wp),dimension(:),allocatable :: xtemp
+
+    allocate(f(6,intin%n))
+    allocate(x0(intin%n))
+    allocate(xhatadd(intin%n))
+    allocate(xadd(intin%n))
+    allocate(xhat(intin%n))
+    allocate(x(intin%n))
+    allocate(xstore(intin%stepmax,intin%n))
+    allocate(tstore(intin%stepmax))
+    allocate(estore(intin%stepmax))
+    allocate(hstore(intin%stepmax))
+    allocate(xtemp(intin%n))
+
+    ! EXECUTION
+
+    ! Initialization
+    x = intin%x0
+    h = intin%h0
+    step = 1
+
+    do
+        ! Check if we have reached final time or maximum steps
+        if ((real(t) >= real(intin%tf)) .OR. (step > intin%stepmax)) then
+            exit
+        end if
+
+        ! Evaluate derivatives
+        f(1,:) = h*f_ptr(t, x)
+
+        xtemp = x + beta(1,1)*f(1,:)
+        f(2,:) = h*f_ptr(t + alpha(1)*h, xtemp)
+
+        xtemp = x + beta(2,1)*f(1,:) + beta(2,2)*f(2,:)
+        f(3,:) = h*f_ptr(t + alpha(2)*h, xtemp)
         
-        procedure (func), pointer :: f_ptr => null ()  ! Derivative function 
+        xtemp = x + beta(3,1)*f(1,:) + beta(3,2)*f(2,:) + beta(3,3)*f(3,:)
+        f(4,:) = h*f_ptr(t + alpha(3)*h, xtemp)
+        
+        xtemp = x + beta(4,1)*f(1,:) + beta(4,2)*f(2,:) + beta(4,3)*f(3,:) &
+            + beta(4,4)*f(4,:) 
+        f(5,:) = h*f_ptr(t + alpha(4)*h, xtemp)
 
-        ! Local
-        complex(wp) :: t ! Time
-        complex(wp),dimension(:,:),allocatable :: f ! Derivatives
-        complex(wp) :: h ! Step size
-        complex(wp),dimension(:),allocatable :: x0
-        complex(wp),dimension(:),allocatable :: xhatadd
-        complex(wp),dimension(:),allocatable :: xadd
-        complex(wp),dimension(:),allocatable :: xhat
-        complex(wp),dimension(:),allocatable :: x
-        complex(wp),dimension(:,:),allocatable :: xstore
-        complex(wp),dimension(:),allocatable :: tstore
-        complex(wp),dimension(:),allocatable :: estore
-        complex(wp),dimension(:),allocatable :: hstore
-        integer :: step
-        complex(wp) :: error
-        integer :: i
+        xtemp = x + beta(5,1)*f(1,:) + beta(5,2)*f(2,:) + beta(5,3)*f(3,:) &
+            + beta(5,4)*f(4,:) + beta(5,5)*f(5,:)
+        f(6,:) = h*f_ptr(t + alpha(5)*h, xtemp)
 
-        allocate(f(6,io%n))
-        allocate(x0(io%n))
-        allocate(xhatadd(io%n))
-        allocate(xadd(io%n))
-        allocate(xhat(io%n))
-        allocate(x(io%n))
-        allocate(xstore(io%stepmax,io%n))
-        allocate(tstore(io%stepmax))
-        allocate(estore(io%stepmax))
-        allocate(hstore(io%stepmax))
-
-        ! EXECUTION
-
-        ! Initialization
-        x = io%x0
-        h = io%h0
-        step = 1
-
-        do
-            if ((real(t) >= real(io%tf)) .OR. (step > io%stepmax)) then
-                exit
-            end if
-
-            ! Evaluate derivatives
-            f(1,:) = h*f_ptr(t, x)
-            f(2,:) = h*f_ptr(t + alpha(1)*h, x + beta(1,1)*f(1,:))
-            f(3,:) = h*f_ptr(t + alpha(2)*h, x + beta(2,1)*f(1,:) &
-                + beta(2,2)*f(2,:))
-            f(4,:) = h*f_ptr(t + alpha(3)*h, x + beta(3,1)*f(1,:) &
-                + beta(3,2)*f(2,:) + beta(3,3)*f(3,:))
-            f(5,:) = h*f_ptr(t + alpha(4)*h, x + beta(4,1)*f(1,:) & 
-                + beta(4,2)*f(2,:) + beta(4,3)*f(3,:) + beta(4,4)*f(4,:))
-            f(6,:) = h*f_ptr(t + alpha(5)*h, x + beta(5,1)*f(1,:) &
-                + beta(5,2)*f(2,:) + beta(5,3)*f(3,:) + beta(5,4)*f(4,:) &
-                + beta(5,5)*f(5,:))
-
-            ! Evaluate integrated states
-            xhatadd = 0
-            xadd = 0
-            do i=1,6
-                xhatadd = xhatadd + chat(i)*f(i,:)
-            end do
-            do i=1,5
-                xadd = xadd + c(i)*f(i,:)
-            end do
-            xhat = x + xhatadd
-            x = x + xadd
-
-            ! Check difference between high/low order 
-            error = norm2(real(x - xhat))
-
-            ! Save current step
-            xstore(step,:) = x
-            tstore(step) = t
-            estore(step) = error
-            hstore(step) = h
-
-            ! Step forward (TODO step size control)
-            t = t + h
-            step = step + 1
-
-        end do 
-
-        ! Populate output
-        allocate(io%xout(step-1,io%n))
-        allocate(io%tout(step-1))
-        allocate(io%eout(step-1))
-        allocate(io%hout(step-1))
-
-        do i=1,step-1
-            io%xout(i,:) = xstore(i,:)
-            io%tout(i) = tstore(i) 
-            io%eout(i) = estore(i)
-            io%hout(i) = hstore(i) 
+        ! Evaluate integrated states
+        xhatadd = 0
+        xadd = 0
+        do i=1,6
+            xhatadd = xhatadd + chat(i)*f(i,:)
         end do
+        do i=1,5
+            xadd = xadd + c(i)*f(i,:)
+        end do
+        xhat = x + xhatadd
+        x = x + xadd
 
-        ! Cleanup
-        deallocate(f)
-        deallocate(x0)
-        deallocate(xhatadd)
-        deallocate(xadd)
-        deallocate(xhat)
-        deallocate(x)
-        deallocate(xstore)
-        deallocate(tstore)
-        deallocate(estore)
-        deallocate(hstore)
+        ! Check difference between high/low order 
+        error = norm2(real(x - xhat))
 
-    end subroutine rk45
+        ! Save current step
+        xstore(step,:) = x
+        tstore(step) = t
+        estore(step) = error
+        hstore(step) = h
+
+        ! Step forward (TODO step size control)
+        t = t + h
+        step = step + 1
+
+    end do 
+
+    ! Populate output
+    allocate(intout%xout(step-1,intin%n))
+    allocate(intout%tout(step-1))
+    allocate(intout%eout(step-1))
+    allocate(intout%hout(step-1))
+
+    do i=1,step-1
+        intout%xout(i,:) = xstore(i,:)
+        intout%tout(i) = tstore(i) 
+        intout%eout(i) = estore(i)
+        intout%hout(i) = hstore(i) 
+    end do
+
+    ! Cleanup
+    deallocate(f)
+    deallocate(x0)
+    deallocate(xhatadd)
+    deallocate(xadd)
+    deallocate(xhat)
+    deallocate(x)
+    deallocate(xstore)
+    deallocate(tstore)
+    deallocate(estore)
+    deallocate(hstore)
+    deallocate(xtemp)
+
+end subroutine rk45
 
 end module rk45module
