@@ -12,8 +12,14 @@ import time
 
 class AstroTime(object):
 
-    def __init__(self, utc_time):
-        self.leapsec = self.get_leapsec(utc_time)
+    def __init__(self, input_time, time_type, output = False):
+        self.output = output
+        self.leapsec = 0
+        if time_type == 'utc':
+            self.leapsec = self.get_leapsec(input_time)
+        if time_type == 'gps':
+            utc_time = self.gps2utc(input_time)
+            self.leapsec = self.get_leapsec(utc_time)
 
     def utc2gps(self, utc_time):
         """ Convert from UTC time to GPS time
@@ -75,9 +81,9 @@ class AstroTime(object):
         url = 'https://www.ietf.org/timezones/data/leap-seconds.list'
         found = False
         current = False
-
-        print('AstTime.get_leapsec(): Looking for leap second data in ' +
-        fname)
+        if self.output:
+            print('AstTime.get_leapsec(): Looking for leap second data ' +
+            'in ' + fname)
         try:
             fh = open(fname,'r')
             found = True
@@ -88,8 +94,9 @@ class AstroTime(object):
                 current = True
             else:
                 fh.close()
-                print('AstTime.get_leapsec(): leap second data more than six' +
-                ' months old')
+                if self.output:
+                    print('AstTime.get_leapsec(): leap second data more ' +
+                    'than six months old')
 
         except FileNotFoundError:
             print('AstTime.get_leapsec(): leap second data not found')
@@ -104,7 +111,8 @@ class AstroTime(object):
                 f.write(response.text)
             fh = open(fname,'r')
 
-        print('AstTime.get_leapsec(): Parsing data from ' + fname)
+        if self.output:
+            print('AstTime.get_leapsec(): Parsing data from ' + fname)
 
         store_time = 0
         store_leapsec = 10

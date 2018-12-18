@@ -9,10 +9,11 @@ import numpy as np
 import requests
 
 class SphereHarm(object):
-    """ Specify and calculate spherical harmonics accelerations
+      """ Specify and calculate spherical harmonics accelerations """
 
-    """
-    def __init__(self, field):
+    def __init__(self, field, output=False):
+
+        self.output = output
 
         # Associate gravity field with filename
         if (field == 'GRGM1200A'):
@@ -42,6 +43,8 @@ class SphereHarm(object):
         fh.close()
 
     def download_coeff(self, fname):
+        """ Download spherical harmonic coefficients from url below """
+
         if (fname == 'GRGM1200A.txt'):
             url = 'http://pds-geosciences.wustl.edu/grail/' + \
             'grail-l-lgrs-5-rdr-v1/grail_1001/shadr/' + \
@@ -57,7 +60,10 @@ class SphereHarm(object):
             f.write(response.text)
 
     def parse(self, fh):
-        print('SphereHarm.parse(): parsing spherical harmonic data')
+        """ Read spherical harmonic data from file """
+
+        if self.output:
+            print('SphereHarm.parse(): parsing spherical harmonic data')
         header = fh.readline()
         sh = np.zeros([721800,4])
 
@@ -70,4 +76,7 @@ class SphereHarm(object):
             sh[idx,3] = columns[3]
 
         return sh
+
+    def sh_accel(self, x, order, degree):
+        """ Calculate acceleration due to non-spherical gravity """
 

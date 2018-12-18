@@ -18,4 +18,4 @@ class TestSphereHarm(unittest.TestCase):
     def test_SphereHarm(self):
         sph_harm = SphereHarm(self.field)
 
-        print(sph_harm.sh)
+        #print(sph_harm.sh)
