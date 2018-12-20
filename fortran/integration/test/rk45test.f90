@@ -26,18 +26,19 @@ program rk45test
     ! EXECUTION
     intin%n = 6
     intin%t0 = 0.0
-    intin%tf = 6.0*pi
+    intin%tf = 2.0*pi
     intin%h0 = 0.001
     allocate(intin%x0(6))
-    intin%x0 = [1.0, 0.0, 0.0, 0.1, 1.0, 0.1]
+    intin%x0 = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
 
     f_ptr => dkep
 
     call rk45(f_ptr, intin, intout)
 
 
-    do i=1,size(intout%tout)
-        print *, real(intout%xout(i,:))
+    !do i=1,size(intout%tout)
+    do i=1,10
+        print *, real(intout%eout(i))
     end do
 
 

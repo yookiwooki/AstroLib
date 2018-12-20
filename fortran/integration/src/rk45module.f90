@@ -10,11 +10,14 @@ module rk45module
         integer :: n                                     ! State size
         complex(wp) :: t0                                ! Initial time
         complex(wp) :: tf                                ! Final time
-        complex(wp) :: h0=1.0D-4                         ! Initial step size
-        integer :: stepmax = 10000                       ! Max number of steps
-        complex(wp) :: hmin = 1.0D-6                     ! Min step size
+        complex(wp) :: h0=1.0D-5                         ! Initial step size
+        integer :: stepmax = 100000                      ! Max number of steps
+        real(wp) :: hmin = 1.0D-6                     ! Min step size
         real(wp) :: tol = 1.0D-10                        ! Tolerance
         complex(wp), dimension(:), allocatable :: x0     ! Initial state 
+        real(wp) :: rparam = 0.5  ! Step size reduce tuning
+        real(wp) :: iparam = 1.5  ! Step size increase tuning
+        real(wp) :: dbparam = 0.9 ! Deadband for increasing step size
     end type IntegratorIn
 
     type IntegratorOut
@@ -49,6 +52,7 @@ contains
     subroutine rk45(f_ptr, intin, intout)
 
         use kindmodule
+        use mathmodule
         use derivkepmodule
 
         ! DECLARATION
@@ -86,6 +90,7 @@ contains
     complex(wp) :: error
     integer :: i
     complex(wp),dimension(:),allocatable :: xtemp
+    complex(wp),dimension(:),allocatable :: xdiff
 
     allocate(f(6,intin%n))
     allocate(x0(intin%n))
@@ -98,6 +103,7 @@ contains
     allocate(estore(intin%stepmax))
     allocate(hstore(intin%stepmax))
     allocate(xtemp(intin%n))
+    allocate(xdiff(intin%n))
 
     ! EXECUTION
 
@@ -145,7 +151,8 @@ contains
         x = x + xadd
 
         ! Check difference between high/low order 
-        error = norm2(real(x - xhat))
+        xdiff = x - xhat
+        error = astnorm(xdiff)
 
         ! Save current step
         xstore(step,:) = x
@@ -153,7 +160,13 @@ contains
         estore(step) = error
         hstore(step) = h
 
-        ! Step forward (TODO step size control)
+        ! Step forward 
+        if ((abs(real(error)) > intin%tol) .AND. (real(h) > intin%hmin)) then
+            h = max(real(h)*intin%rparam, intin%hmin)
+        else if (abs(real(error)) < (intin%tol)*intin%dbparam) then
+            h = h*intin%iparam
+        end if
+
         t = t + h
         step = step + 1
 
@@ -184,6 +197,7 @@ contains
     deallocate(estore)
     deallocate(hstore)
     deallocate(xtemp)
+    deallocate(xdiff)
 
 end subroutine rk45
 

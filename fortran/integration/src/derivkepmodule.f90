@@ -8,6 +8,7 @@ contains
     function dkep(t, x)
 
         use kindmodule
+        use mathmodule
 
         ! DECLARATION
         implicit none
@@ -17,16 +18,23 @@ contains
         complex(wp),parameter :: mu=1.0
         complex(wp),dimension(3) :: accel
         complex(wp),allocatable :: dkep(:)
+        complex(wp),allocatable :: pos(:)
 
         ! EXECUTION
+        if (.NOT. allocated(pos)) then 
+            allocate(pos(3))
+        end if
+
         if (.NOT. allocated(dkep)) then 
-            allocate(dkep(size(x)))
+            allocate(dkep(6))
         end if
 
         dkep(1:3) = x(4:6)
-        accel(1) = -mu*x(1)/(norm2(real(x(1:3))**3))
-        accel(2) = -mu*x(2)/(norm2(real(x(1:3))**3))
-        accel(3) = -mu*x(3)/(norm2(real(x(1:3))**3))
+
+        pos(1:3) = x(1:3)
+        accel(1) = -mu*x(1)/(astnorm(pos)**3)
+        accel(2) = -mu*x(2)/(astnorm(pos)**3)
+        accel(3) = -mu*x(3)/(astnorm(pos)**3)
         dkep(4:6) = accel
 
     end function dkep
