@@ -10,14 +10,14 @@ module rk45module
         integer :: n                                     ! State size
         complex(wp) :: t0                                ! Initial time
         complex(wp) :: tf                                ! Final time
-        complex(wp) :: h0=1.0D-5                         ! Initial step size
+        complex(wp) :: h0=1.0E-3_wp                      ! Initial step size
         integer :: stepmax = 100000                      ! Max number of steps
-        real(wp) :: hmin = 1.0D-6                     ! Min step size
-        real(wp) :: tol = 1.0D-10                        ! Tolerance
+        real(wp) :: hmin = 1.0E-5_wp                     ! Min step size
+        real(wp) :: tol = 1.0E-12_wp                     ! Tolerance
         complex(wp), dimension(:), allocatable :: x0     ! Initial state 
-        real(wp) :: rparam = 0.5  ! Step size reduce tuning
-        real(wp) :: iparam = 1.5  ! Step size increase tuning
-        real(wp) :: dbparam = 0.9 ! Deadband for increasing step size
+        real(wp) :: rparam = 0.5_wp  ! Step size reduce tuning
+        real(wp) :: iparam = 1.01_wp  ! Step size increase tuning
+        real(wp) :: dbparam = 0.8_wp ! Deadband for increasing step size
     end type IntegratorIn
 
     type IntegratorOut
@@ -29,22 +29,22 @@ module rk45module
     
     ! Runge-Kutta-Fehlberg coefficients
     complex(wp), parameter :: alpha(5) = &
-        [1.0/4.0, 3.0/8.0, 12.0/13.0, 1.0, 1.0/2.0]
+        [1.0_wp/4.0_wp, 3.0_wp/8.0_wp, 12.0_wp/13.0_wp, 1.0_wp, 1.0_wp/2.0_wp]
 
-    complex(wp), parameter :: beta(5,5) = transpose(reshape([ &
-        1.0/4.0, 0.0, 0.0, 0.0, 0.0, &
-        3.0/32.0, 9.0/32.0, 0.0, 0.0, 0.0, &
-        1932.0/2197.0, -7200.0/2197.0, 7296.0/2197.0, 0.0, 0.0, &
-        439.0/216.0, -8.0, 3680.0/513.0, -845.0/4104.0, 0.0, &
-        -8.0/27.0, 2.0, -3544.0/2565.0, 1859.0/4104.0, -11.0/40.0], &
-        shape(beta), order=[2,1]))
+    complex(wp), parameter :: beta(5,5) = reshape([ &
+        1.0_wp/4.0_wp, 0.0_wp, 0.0_wp, 0.0_wp, 0.0_wp, &
+        3.0_wp/32.0_wp, 9.0_wp/32.0_wp, 0.0_wp, 0.0_wp, 0.0_wp, &
+        1932.0_wp/2197.0_wp, -7200.0_wp/2197.0_wp, 7296.0_wp/2197.0_wp, 0.0_wp, 0.0_wp, &
+        439.0_wp/216.0_wp, -8.0_wp, 3680.0_wp/513.0_wp, -845.0_wp/4104.0_wp, 0.0_wp, &
+        -8.0_wp/27.0, 2.0_wp, -3544.0_wp/2565.0_wp, 1859.0_wp/4104.0_wp, -11.0_wp/40.0_wp], &
+        shape(beta),order=[2,1])
 
     complex(wp), parameter :: c(5) = &
-        [25.0/216.0, 0.0, 1408.0/2565.0, 2197.0/4104.0, -1.0/5.0]
+        [25.0_wp/216.0_wp, 0.0_wp, 1408.0_wp/2565.0_wp, 2197.0_wp/4104.0_wp, -1.0_wp/5.0_wp]
 
     complex(wp), parameter :: chat(6) = &
-        [16.0/135.0, 0.0, 6656.0/12825.0, 28561.0/56430.0, &
-        -9.0/50.0, 2.0/55.0]
+        [16.0_wp/135.0_wp, 0.0_wp, 6656.0_wp/12825.0_wp, 28561.0_wp/56430.0_wp, &
+        -9.0_wp/50.0_wp, 2.0_wp/55.0_wp]
 
 contains 
 
@@ -93,7 +93,6 @@ contains
     complex(wp),dimension(:),allocatable :: xdiff
 
     allocate(f(6,intin%n))
-    allocate(x0(intin%n))
     allocate(xhatadd(intin%n))
     allocate(xadd(intin%n))
     allocate(xhat(intin%n))
@@ -109,13 +108,28 @@ contains
 
     ! Initialization
     x = intin%x0
+    t = intin%t0
     h = intin%h0
     step = 1
 
+    ! Save first step
+    xstore(step,:) = x
+    tstore(step) = t
+    estore(step) = 0 
+    hstore(step) = 0
+    step = step + 1
+
     do
+        t = t + h
+
         ! Check if we have reached final time or maximum steps
-        if ((real(t) >= real(intin%tf)) .OR. (step > intin%stepmax)) then
+        if (real(t) > real(intin%tf)) then
             exit
+        elseif (step > intin%stepmax) then
+            print *, "WARNING: stepmax reached (rk45module.f90)"
+            exit
+        elseif (real(t+h) > real(intin%tf)) then
+           t = intin%tf 
         end if
 
         ! Evaluate derivatives
@@ -160,15 +174,17 @@ contains
         estore(step) = error
         hstore(step) = h
 
-        ! Step forward 
+        ! Decrease step size if error above tolerance and above min step size
         if ((abs(real(error)) > intin%tol) .AND. (real(h) > intin%hmin)) then
+            t = t - h
             h = max(real(h)*intin%rparam, intin%hmin)
+        ! Increase step size if error is far enough above tolerance
         else if (abs(real(error)) < (intin%tol)*intin%dbparam) then
             h = h*intin%iparam
+            step = step + 1
+        else
+            step = step + 1
         end if
-
-        t = t + h
-        step = step + 1
 
     end do 
 
@@ -178,16 +194,13 @@ contains
     allocate(intout%eout(step-1))
     allocate(intout%hout(step-1))
 
-    do i=1,step-1
-        intout%xout(i,:) = xstore(i,:)
-        intout%tout(i) = tstore(i) 
-        intout%eout(i) = estore(i)
-        intout%hout(i) = hstore(i) 
-    end do
+    intout%xout(:,:) = xstore(1:step-1,:)
+    intout%tout(:) = tstore(1:step-1) 
+    intout%eout(:) = estore(1:step-1)
+    intout%hout(:) = hstore(1:step-1) 
 
     ! Cleanup
     deallocate(f)
-    deallocate(x0)
     deallocate(xhatadd)
     deallocate(xadd)
     deallocate(xhat)
