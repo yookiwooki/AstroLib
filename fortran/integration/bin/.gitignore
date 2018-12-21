@@ -1,4 +1,5 @@
 # Ignore all files in this directory
 *
 # Except this one
+!build.sh
 !.gitignore
