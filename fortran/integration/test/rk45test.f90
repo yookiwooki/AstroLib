@@ -4,6 +4,7 @@ program rk45test
     use constmodule
     use rk45module
     use derivkepmodule
+    use intplotmodule
 
     ! DECLARATION
     implicit none
@@ -26,19 +27,23 @@ program rk45test
     ! EXECUTION
     intin%n = 6
     intin%t0 = 0.0_wp
-    intin%tf = 18.0_wp
-    intin%h0 = 0.001_wp
+    intin%tf = 3.9500_wp
+    intin%h0 = 0.0001_wp
+    intin%tol = 1e-14_wp
     allocate(intin%x0(6))
-    intin%x0 = [1.0_wp, 0.0_wp, 0.0_wp, 0.1_wp, 1.0_wp, 0.1_wp]
+    intin%x0 = [0.7816_wp, 0.0_wp, 0.0_wp, 0.0_wp, 0.4432_wp, 0.0_wp]
 
-    f_ptr => dkep
+    f_ptr => dcrtbp 
 
+   
     call rk45(f_ptr, intin, intout)
 
     do i=1,size(intout%tout)
     !do i=1,10
-        print *, real(intout%tout(i))
+        print *, real(intout%hout(i))
     end do
+
+    call intplotstart(600,600)
 
     ! Cleanup
     deallocate(intin%x0)

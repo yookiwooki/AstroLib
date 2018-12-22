@@ -8,5 +8,6 @@ module kindmodule
     implicit none
 
     integer, parameter, public :: wp=real64
+    integer, parameter, public :: sp=kind(1e0)
 
 end module kindmodule

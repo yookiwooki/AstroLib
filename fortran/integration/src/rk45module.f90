@@ -2,6 +2,7 @@
 module rk45module
 
     use kindmodule
+    use intplotmodule
 
     implicit none
 
@@ -12,7 +13,7 @@ module rk45module
         complex(wp) :: tf                                ! Final time
         complex(wp) :: h0=1.0E-3_wp                      ! Initial step size
         integer :: stepmax = 100000                      ! Max number of steps
-        real(wp) :: hmin = 1.0E-5_wp                     ! Min step size
+        real(wp) :: hmin = 1.0E-8_wp                     ! Min step size
         real(wp) :: tol = 1.0E-12_wp                     ! Tolerance
         complex(wp), dimension(:), allocatable :: x0     ! Initial state 
         real(wp) :: rparam = 0.5_wp  ! Step size reduce tuning
@@ -112,6 +113,9 @@ contains
     h = intin%h0
     step = 1
 
+    ! Plot first step
+    call addpoint(real(x(1), sp), real(x(2), sp))
+
     ! Save first step
     xstore(step,:) = x
     tstore(step) = t
@@ -167,6 +171,9 @@ contains
         ! Check difference between high/low order 
         xdiff = x - xhat
         error = astnorm(xdiff)
+
+        ! Plot first step
+        call addpoint(real(x(1), sp), real(x(2), sp))
 
         ! Save current step
         xstore(step,:) = x
