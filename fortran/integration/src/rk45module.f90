@@ -85,8 +85,6 @@ contains
         complex(wp) :: t                                 ! Time
         complex(wp),dimension(:,:),allocatable :: f      ! Derivatives
         complex(wp) :: h                                 ! Step size
-        complex(wp),dimension(:),allocatable :: xhatadd  ! High order sum 
-        complex(wp),dimension(:),allocatable :: xadd     ! Low order sum
         complex(wp),dimension(:),allocatable :: xhat     ! High order result
         complex(wp),dimension(:),allocatable :: x        ! Low order result
         complex(wp),dimension(:),allocatable :: xold     ! Previous iter result
@@ -101,8 +99,6 @@ contains
         complex(wp),dimension(:),allocatable :: xdiff    ! High/low order diff
 
         allocate(f(6,intin%n))
-        allocate(xhatadd(intin%n))
-        allocate(xadd(intin%n))
         allocate(xhat(intin%n))
         allocate(x(intin%n))
         allocate(xold(intin%n))
@@ -167,17 +163,12 @@ contains
             f(6,:) = h*f_ptr(t + alpha(5)*h, xtemp)
 
             ! Evaluate integrated states
-            xhatadd = 0.0_wp
-            xadd = 0.0_wp
-            do i=1,6
-                xhatadd = xhatadd + chat(i)*f(i,:)
-            end do
-            do i=1,5
-                xadd = xadd + c(i)*f(i,:)
-            end do
-            xhat = x + xhatadd
-            x = x + xadd
+            xhat = x + chat(1)*f(1,:) + chat(2)*f(2,:) + chat(3)*f(3,:) &
+                + chat(4)*f(4,:) + chat(5)*f(5,:) + chat(6)*f(6,:)
 
+            x = x + c(1)*f(1,:) + c(2)*f(2,:) + c(3)*f(3,:) &
+                + c(4)*f(4,:) + c(5)*f(5,:)
+            
             ! Check difference between high/low order 
             xdiff = x - xhat
             error = astnorm(xdiff)
@@ -223,8 +214,6 @@ contains
 
         ! Cleanup
         deallocate(f)
-        deallocate(xhatadd)
-        deallocate(xadd)
         deallocate(xhat)
         deallocate(x)
         deallocate(xold)
