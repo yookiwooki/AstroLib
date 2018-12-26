@@ -1,10 +1,14 @@
-module derivkepmodule
+!derivmodule.f90 - equations of motion for integrator
+module derivmodule
     use kindmodule
 
     implicit none
 
-    complex(wp) :: mu=1.0 ! Gravitational parameter
+    complex(wp) :: mu=1.0              ! Gravitational parameter
     complex(wp) :: mustar=0.0121505856 ! Mass ratio for three body problem 
+
+    PUBLIC :: dkep, dcrtbp, setmu, setmustar, getmu, getmustar
+    PRIVATE :: mu, mustar
 
 contains
 
@@ -95,4 +99,40 @@ contains
     end function dcrtbp
 
 
-end module derivkepmodule
+    ! Sets mass ratio module variable
+    subroutine setmustar(mustarin)
+        use kindmodule
+        implicit none
+        complex(wp),intent(in) :: mustarin
+        mustar = mustarin
+    end subroutine setmustar
+
+
+    ! Reports mass ratio module variable
+    function getmustar()
+        use kindmodule
+        implicit none
+        complex(wp) :: getmustar
+        getmustar = mustar
+    end function getmustar
+
+
+    ! Sets gravitational parameter module variable
+    subroutine setmu(muin)
+        use kindmodule
+        implicit none
+        complex(wp),intent(in) :: muin
+        mu = muin
+    end subroutine setmu
+
+
+    ! Reports gravitational parameter module variable
+    function getmu()
+        use kindmodule
+        implicit none
+        complex(wp) :: getmu
+        getmu = mu
+    end function getmu
+
+
+end module derivmodule

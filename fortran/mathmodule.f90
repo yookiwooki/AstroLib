@@ -19,7 +19,7 @@ module mathmodule
         integer :: i
 
         ! EXECUTION
-        adder = 0
+        adder = 0.0_wp
         do i=1,size(x)
             adder = adder + x(i)**2 
         end do

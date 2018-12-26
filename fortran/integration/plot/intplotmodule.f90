@@ -6,8 +6,13 @@ module intplotmodule
     implicit none
 
     integer :: cpoint=0 
-    real(glfloat),dimension(:) :: X(10000), Y(10000)
+    real(glfloat),dimension(:) :: X(100000), Y(100000)
     real(glfloat) :: intscale=0.9
+    real(glfloat) :: intxoffset=0.0
+
+    PUBLIC :: addpoint, resetpoints, intplotstart
+    PRIVATE :: cpoint, X, Y, intscale, intxoffset
+    PRIVATE :: drawcircle, drawtraj, mainloop, glsetup
 
 contains
 
@@ -25,6 +30,11 @@ contains
         Y(cpoint) = ypoint
 
     end subroutine addpoint
+
+
+    subroutine resetpoints()
+        cpoint=0
+    end subroutine resetpoints
 
 
     subroutine drawcircle(xcenter, radius)
@@ -89,7 +99,7 @@ contains
 
         ! EXECUTION
         call glloadidentity
-        call gltranslatef(-1.0_glfloat*intscale, 0.0_glfloat, 0.0_glfloat)
+        call gltranslatef(intxoffset*intscale, 0.0_glfloat, 0.0_glfloat)
         call drawcircle(0.0, 0.02)
         call drawcircle(1.0, 0.01)
         call drawtraj

@@ -20,8 +20,8 @@ class TestRKF45(unittest.TestCase):
 
     def test_noninc_noneq_ellip(self):
 
-        rv0 = np.array([1, 0, 0, 0.1, 1, 0.1])
-        tspan = [0, 18]
+        rv0 = np.array([1, 0, 0, 0, 1, 0])
+        tspan = [0, 2*np.pi]
         result = rkf45(deriv_kepler, tspan, rv0, self.options)
 
         #x = result.x[0,:]
@@ -36,5 +36,5 @@ class TestRKF45(unittest.TestCase):
         #plt.plot(result.h)
         #plt.show()
 
-        print(result.x[:,-2])
-        print(result.t[-2])
+        print(result.x[:,-1])
+        print(result.t[-1])
