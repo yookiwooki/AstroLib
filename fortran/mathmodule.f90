@@ -15,15 +15,9 @@ module mathmodule
 
         complex(wp),dimension(:),intent(in),allocatable :: x
         complex(wp) :: astnorm
-        complex(wp) :: adder
-        integer :: i
 
         ! EXECUTION
-        adder = 0.0_wp
-        do i=1,size(x)
-            adder = adder + x(i)**2 
-        end do
-        astnorm = sqrt(adder)
+        astnorm = sqrt(dot_product(x,x))
 
     end function astnorm
 

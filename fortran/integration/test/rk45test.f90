@@ -24,33 +24,40 @@ program rk45test
     type(IntegratorOut) :: intout
     complex(wp),allocatable :: error(:)
 
-    integer :: i
+    integer :: i,timeiter
+
+    real(wp) :: starttime, endtime
     
     ! EXECUTION
     intin%n = 6
     intin%t0 = 0.0_wp
     intin%tf = 2.0_wp*pi 
-    intin%h0 = 1.0e-10_wp 
-    intin%tol = 1e-15_wp
+    intin%h0 = 1.0e-8_wp 
+    intin%tol = 1e-14_wp
     allocate(intin%x0(6))
     !intin%x0 = [0.7816_wp, 0.0_wp, 0.0_wp, 0.0_wp, 0.4432_wp, 0.0_wp]
     intin%x0 = [1.0_wp, 0.0_wp, 0.0_wp, 0.0_wp, 1.0_wp, 0.0_wp]
 
     f_ptr => dkep
-   
-    call rk45(f_ptr, intin, intout)
 
-    !do i=1,size(intout%tout)
-    !!do i=1,10
-    !    print *, real(intout%eout(i))
-    !end do
+    timeiter = 100
+    call CPU_TIME(starttime)
+    do i=1,timeiter
+        call rk45(f_ptr, intin, intout)
+    end do
+    call CPU_TIME(endtime)
+    print *, (endtime-starttime)/real(timeiter)
 
     allocate(error(6))
     error = intin%x0 - intout%xout(size(intout%tout),:)
     print *, real(astnorm(error))
     print *, real(intin%x0(1:3))
     print *, real(intout%xout(size(intout%tout),1:3))
-
+    
+    call resetpoints
+    do i=1,size(intout%tout)
+        call addpoint(real(intout%xout(i,1), sp), real(intout%xout(i,2), sp))
+    end do
     call intplotstart(600,600)
 
     ! Cleanup

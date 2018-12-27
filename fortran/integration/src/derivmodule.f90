@@ -1,5 +1,6 @@
 !derivmodule.f90 - equations of motion for integrator
 module derivmodule
+
     use kindmodule
 
     implicit none
@@ -7,8 +8,8 @@ module derivmodule
     complex(wp) :: mu=1.0              ! Gravitational parameter
     complex(wp) :: mustar=0.0121505856 ! Mass ratio for three body problem 
 
-    PUBLIC :: dkep, dcrtbp, setmu, setmustar, getmu, getmustar
-    PRIVATE :: mu, mustar
+    public :: dkep, dcrtbp, setmu, setmustar, getmu, getmustar
+    private :: mu, mustar
 
 contains
 

@@ -1,19 +1,27 @@
+! ****************************************************************************************
+! Author: Sean McArdle
 ! rk45module.f90 - Runge-Kutta-Fehlberg 4(5) integrator 
+
 module rk45module
 
     use kindmodule
-    use intplotmodule
 
     implicit none
+
+    private
+
+    public :: IntegratorIn
+    public :: IntegratorOut
+    public :: rk45
 
     ! Input for integrator 
     type IntegratorIn
         integer :: n                               ! State size
         complex(wp) :: t0                          ! Initial time
         complex(wp) :: tf                          ! Final time
-        complex(wp) :: h0=1.0E-3_wp                ! Initial step size
+        complex(wp) :: h0=1.0E-8_wp                ! Initial step size
         integer :: stepmax = 100000                ! Max number of steps
-        real(wp) :: hmin = 1.0E-6_wp               ! Min step size
+        real(wp) :: hmin = 1.0E-10_wp               ! Min step size
         real(wp) :: tol = 1.0E-12_wp               ! Tolerance
         complex(wp),dimension(:),allocatable :: x0 ! Initial state 
         real(wp) :: rparam = 0.5_wp                ! Step reduce factor
@@ -49,15 +57,17 @@ module rk45module
         -9.0_wp/50.0_wp, 2.0_wp/55.0_wp]
 
 contains 
+! ****************************************************************************************
 
-    ! RKF 4(5)th order variable step size numerical integration 
-    ! 
-    ! Ref:
-    ! Fehlberg, E. "Low order classical runge-kutta formulas with stepsize  
-    ! control and their application to some heat transfer problems." (1969).
-    ! 
-    ! NOTE: The reference above has a tricky typo related to the
-    ! step size in Equation 2 that has been corrected in this implementation.
+! ****************************************************************************************
+! RKF 4(5)th order variable step size numerical integration 
+! 
+! Ref:
+! Fehlberg, E. "Low order classical runge-kutta formulas with stepsize  
+! control and their application to some heat transfer problems." (1969).
+! 
+! NOTE: The reference above has a tricky typo related to the
+! step size in Equation 2 that has been corrected in this implementation.
 
     subroutine rk45(f_ptr, intin, intout)
 
@@ -117,10 +127,6 @@ contains
         h = intin%h0
         step = 1
 
-        ! Plot first step
-        call resetpoints
-        call addpoint(real(x(1), sp), real(x(2), sp))
-
         ! Save first step
         xstore(step,:) = x
         tstore(step) = t
@@ -173,9 +179,6 @@ contains
             xdiff = x - xhat
             error = astnorm(xdiff)
 
-            ! Plot current step
-            call addpoint(real(x(1), sp), real(x(2), sp))
-
             ! Save current step
             xstore(step,:) = x
             tstore(step) = t
@@ -225,5 +228,6 @@ contains
         deallocate(xdiff)
 
     end subroutine rk45
-
+! ****************************************************************************************
     end module rk45module
+! ****************************************************************************************
