@@ -11,12 +11,12 @@ program rk45test
     implicit none
 
     abstract interface
-    function func(t, x)
-    use kindmodule
-    complex(wp),intent(in) :: t
-    complex(wp),intent(in),allocatable :: x(:)
-    complex(wp),allocatable :: func(:)
-    end function func
+        subroutine func(t,x,xdot)
+            use kindmodule
+            complex(wp),intent(in) :: t
+            complex(wp),intent(in),dimension(:) :: x
+            complex(wp),intent(out),dimension(:) :: xdot 
+        end subroutine func
     end interface 
 
     procedure (func), pointer :: f_ptr => null()
@@ -33,7 +33,7 @@ program rk45test
     intin%t0 = 0.0_wp
     intin%tf = 2.0_wp*pi 
     intin%h0 = 1.0e-8_wp 
-    intin%tol = 1e-14_wp
+    intin%tol = 1e-12_wp
     allocate(intin%x0(6))
     !intin%x0 = [0.7816_wp, 0.0_wp, 0.0_wp, 0.0_wp, 0.4432_wp, 0.0_wp]
     intin%x0 = [1.0_wp, 0.0_wp, 0.0_wp, 0.0_wp, 1.0_wp, 0.0_wp]

@@ -82,18 +82,20 @@ contains
         type(IntegratorIn),intent(in) :: intin 
         type(IntegratorOut),intent(out) :: intout
         abstract interface
-            function func(t, x)
+            subroutine func(t,x,xdot)
                 use kindmodule
                 complex(wp),intent(in) :: t
-                complex(wp),intent(in),allocatable :: x(:)
-                complex(wp),allocatable :: func(:)
-            end function func
+                complex(wp),intent(in),dimension(:) :: x
+                complex(wp),intent(out),dimension(:) :: xdot 
+            end subroutine func
         end interface 
         procedure (func), pointer :: f_ptr => null ()  ! Derivative function 
 
         ! Local variables
         complex(wp) :: t                                 ! Time
-        complex(wp),dimension(:,:),allocatable :: f      ! Derivatives
+        complex(wp),dimension(:),allocatable :: xdot     ! Derivatives
+        complex(wp),dimension(:),allocatable :: f1,f2,f3 ! Derivatives
+        complex(wp),dimension(:),allocatable :: f4,f5,f6 ! Derivatives
         complex(wp) :: h                                 ! Step size
         complex(wp),dimension(:),allocatable :: xhat     ! High order result
         complex(wp),dimension(:),allocatable :: x        ! Low order result
@@ -108,7 +110,13 @@ contains
         complex(wp),dimension(:),allocatable :: xtemp    ! State input for deriv
         complex(wp),dimension(:),allocatable :: xdiff    ! High/low order diff
 
-        allocate(f(6,intin%n))
+        allocate(xdot(intin%n))
+        allocate(f1(intin%n))
+        allocate(f2(intin%n))
+        allocate(f3(intin%n))
+        allocate(f4(intin%n))
+        allocate(f5(intin%n))
+        allocate(f6(intin%n))
         allocate(xhat(intin%n))
         allocate(x(intin%n))
         allocate(xold(intin%n))
@@ -149,35 +157,41 @@ contains
             end if
 
             ! Evaluate derivatives
-            f(1,:) = h*f_ptr(t, x)
+            call f_ptr(t, x, xdot)
+            f1 = h*xdot
 
-            xtemp = x + beta(1,1)*f(1,:)
-            f(2,:) = h*f_ptr(t + alpha(1)*h, xtemp)
+            xtemp = x + beta(1,1)*f1
+            call f_ptr(t + alpha(1)*h, xtemp, xdot)
+            f2 = h*xdot
 
-            xtemp = x + beta(2,1)*f(1,:) + beta(2,2)*f(2,:)
-            f(3,:) = h*f_ptr(t + alpha(2)*h, xtemp)
+            xtemp = x + beta(2,1)*f1 + beta(2,2)*f2
+            call f_ptr(t + alpha(2)*h, xtemp, xdot)
+            f3 = h*xdot
 
-            xtemp = x + beta(3,1)*f(1,:) + beta(3,2)*f(2,:) + beta(3,3)*f(3,:)
-            f(4,:) = h*f_ptr(t + alpha(3)*h, xtemp)
+            xtemp = x + beta(3,1)*f1 + beta(3,2)*f2 + beta(3,3)*f3
+            call f_ptr(t + alpha(3)*h, xtemp, xdot)
+            f4 = h*xdot
 
-            xtemp = x + beta(4,1)*f(1,:) + beta(4,2)*f(2,:) + beta(4,3)*f(3,:) &
-                + beta(4,4)*f(4,:) 
-            f(5,:) = h*f_ptr(t + alpha(4)*h, xtemp)
+            xtemp = x + beta(4,1)*f1 + beta(4,2)*f2 + beta(4,3)*f3 &
+                + beta(4,4)*f4 
+            call f_ptr(t + alpha(4)*h, xtemp, xdot)
+            f5 = h*xdot
 
-            xtemp = x + beta(5,1)*f(1,:) + beta(5,2)*f(2,:) + beta(5,3)*f(3,:) &
-                + beta(5,4)*f(4,:) + beta(5,5)*f(5,:)
-            f(6,:) = h*f_ptr(t + alpha(5)*h, xtemp)
+            xtemp = x + beta(5,1)*f1 + beta(5,2)*f2 + beta(5,3)*f3 &
+                + beta(5,4)*f4 + beta(5,5)*f5
+            call f_ptr(t + alpha(5)*h, xtemp, xdot)
+            f6 = h*xdot
 
             ! Evaluate integrated states
-            xhat = x + chat(1)*f(1,:) + chat(2)*f(2,:) + chat(3)*f(3,:) &
-                + chat(4)*f(4,:) + chat(5)*f(5,:) + chat(6)*f(6,:)
+            xhat = x + chat(1)*f1 + chat(2)*f2 + chat(3)*f3 &
+                + chat(4)*f4 + chat(5)*f5 + chat(6)*f6
 
-            x = x + c(1)*f(1,:) + c(2)*f(2,:) + c(3)*f(3,:) &
-                + c(4)*f(4,:) + c(5)*f(5,:)
+            x = x + c(1)*f1 + c(2)*f2 + c(3)*f3 &
+                + c(4)*f4 + c(5)*f5
             
             ! Check difference between high/low order 
             xdiff = x - xhat
-            error = astnorm(xdiff)
+            error = astnorm(xdiff)/astnorm(x)
 
             ! Save current step
             xstore(step,:) = x
@@ -216,7 +230,13 @@ contains
         intout%hout(:) = hstore(1:step-1) 
 
         ! Cleanup
-        deallocate(f)
+        deallocate(xdot)
+        deallocate(f1)
+        deallocate(f2)
+        deallocate(f3)
+        deallocate(f4)
+        deallocate(f5)
+        deallocate(f6)
         deallocate(xhat)
         deallocate(x)
         deallocate(xold)

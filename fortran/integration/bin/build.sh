@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-gfortran -g  ../../kindmodule.f90 ../../constmodule.f90 ../../mathmodule.f90 \
+gfortran -g -O3 ../../kindmodule.f90 ../../constmodule.f90 ../../mathmodule.f90 \
     ../plot/intplotmodule.f90 \
     ../src/derivmodule.f90 ../src/rk45module.f90 \
     -I$F03GL ${F03GL}OpenGL_gl.o ${F03GL}OpenGL_glu.o ${F03GL}OpenGL_freeglut.o \

@@ -13,7 +13,7 @@ module mathmodule
         ! DECLARATION
         implicit none
 
-        complex(wp),dimension(:),intent(in),allocatable :: x
+        complex(wp),dimension(:),intent(in) :: x
         complex(wp) :: astnorm
 
         ! EXECUTION
